@@ -8,6 +8,12 @@ var User = mongoose.model('user',{
         require: true,
         trim:true,
         minlength: 1
+    },
+    age:{
+        type: Number,
+        required:true,
+        minlength:1,
+        trim:true
     }
 });
 

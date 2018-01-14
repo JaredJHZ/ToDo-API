@@ -3,10 +3,10 @@ const request = require('supertest');
 
 const {app} = require('./../server');
 const {Todo} = require('./../models/ToDo');
-
+/*
 beforeEach((done)=>{ //mocha function that runs before each expect in a describe
     Todo.remove({}).then(()=>done());
-});
+}); */
 
 describe('Post/todos',()=>{
     it('Should create a new todo',(done)=>{
@@ -23,8 +23,7 @@ describe('Post/todos',()=>{
                         return done(error);
                     }
 
-                    Todo.find().then((todos)=>{
-                        expect(todos.length).toBe(1);
+                    Todo.find({text}).then((todos)=>{
                         expect(todos[0].text).toBe(text);
                         done();
                     }).catch((error)=>done(error));
@@ -34,16 +33,23 @@ describe('Post/todos',()=>{
     it('Should not create a todo with invalid body data',(done)=>{
         request(app)
             .post('/todos')
-                .send({})
+                .send({text:''})
                 .expect(400)
                 .end((error,res)=>{
                     if(error){
                         return done(error);
                     }
-                    Todo.find().then((todos)=>{
-                        expect(todos.length).toBe(0);
-                        done();
-                    }).catch((error)=> done(error));;
+                    done();
                 })
     });
+});
+
+describe('get/todos',(done)=>{
+    it('Should fetch all data',(done)=>{
+        request(app)
+            .get('/todos')
+            .expect(200);
+            done();
+            
+    })
 });
