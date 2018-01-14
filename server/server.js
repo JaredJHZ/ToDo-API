@@ -6,6 +6,8 @@ var mongoose = require('./db/db');
 var {Todo} = require('./models/ToDo');
 var {User} = require('./models/user');
 
+const port = process.env.PORT || 5000;
+
 var app = express();
 
 
@@ -55,8 +57,8 @@ app.get('/todos/:id',(req,res)=>{
 
 });
 
-app.listen(5000,()=>{
-    console.log('Connected to port 5000');
+app.listen(port,()=>{
+    console.log('Connected to port: '+port);
 });
 
 module.exports = {app};
