@@ -43,7 +43,7 @@ app.get('/todos',(req,res)=>{
 app.get('/todos/:id',(req,res)=>{
     let id = req.params.id;
     if(!ObjectId.isValid(id)){
-       return res.send('Id not valid');
+       return res.status(400).send('Id not valid');
     }
     Todo.findById(id).then(
         (doc)=>{
@@ -54,6 +54,22 @@ app.get('/todos/:id',(req,res)=>{
             }
         }
     ).catch((error)=>{res.status(404).send('Error in process')});
+
+});
+
+app.delete('/todos/:id',(req,res)=>{
+    let id = req.params.id;
+    if(!ObjectId.isValid(id)){
+        return res.status(400).send('Error Id invalid');
+    }
+    Todo.findByIdAndRemove(id).then(
+        (ok)=>{
+            if(!ok){
+                return res.status(404).send('Error document not found');
+            }
+            res.send(ok);
+        }
+    ).catch((error)=>res.status(400));
 
 });
 
