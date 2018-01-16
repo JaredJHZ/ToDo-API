@@ -1,12 +1,25 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-const {ObjectId} = require('mongodb');
+var env = process.env.NODE_ENV ||  'development';;
 
+if(env==='development')
+{
+    process.env.PORT = 5000;
+    process.env.MONGODB_URI= "mongodb://localhost:27017/TodoApp";
+}else if(env === 'test'){
+    process.env.PORT =5000;
+    process.env.MONGODB_URI= "mongodb://localhost:27017/TodoAppTest";
+}
+
+console.log(env);   
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const {ObjectId} = require('mongodb');
+const _ = require('lodash');
 var mongoose = require('./db/db');
 var {Todo} = require('./models/ToDo');
 var {User} = require('./models/user');
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT;
 
 var app = express();
 
@@ -48,7 +61,7 @@ app.get('/todos/:id',(req,res)=>{
     Todo.findById(id).then(
         (doc)=>{
             if(!doc){
-                res.status(400).send('Error id not found');
+                res.status(404).send('Error id not found');
             }else{
                 res.send({doc});
             }
@@ -72,6 +85,33 @@ app.delete('/todos/:id',(req,res)=>{
     ).catch((error)=>res.status(400));
 
 });
+
+app.patch('/todos/:id',(req,res)=>{
+    let id = req.params.id;
+    let body = _.pick(req.body, ['text','completed']);
+    if(!ObjectId.isValid(id)){
+        return res.status(400).send('Error Id invalid');
+    }
+    if(_.isBoolean(body.completed) && body.completed){
+        body.completedAt = new Date().getTime();
+    } else{
+        body.completed = false;
+        body.completedAt = null;
+    }
+
+    Todo.findByIdAndUpdate(id,{$set:body},{new: true}).then(
+        (todo)=>{
+            if(!todo){
+                res.status(400).send();
+            }
+            res.send({todo});
+        }
+    ).catch((e)=>{
+        res.status(400).send();
+    })
+});
+
+
 
 app.listen(port,()=>{
     console.log('Connected to port: '+port);

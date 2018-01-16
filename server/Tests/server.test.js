@@ -4,17 +4,33 @@ const {ObjectId} = require('mongodb');
 const {app} = require('./../server');
 const {Todo} = require('./../models/ToDo');
 
-const todos = [{
+
+var todos = [
+    {
     _id: new ObjectId(),
-    text:'First text to do'
-}]
+    text:'First text to do',
+    completed:false,
+    completedAt:null
+    },
+    {
+        _id: new ObjectId(),
+        text: 'Second to do',
+        completed:true,
+        completedAt: 555
+    }
 
+]
 
-beforeEach((done)=>{ //mocha function that runs before each expect in a describe
+beforeEach((done)=>{
     Todo.remove({}).then(()=>{
         return Todo.insertMany(todos);
-    }).then(()=>done());
+    }).then(()=>{
+        done();
+    });
 });
+
+
+
 
 describe('Delete/todos',()=>{
 
@@ -22,7 +38,7 @@ describe('Delete/todos',()=>{
         request(app)
             .delete('/todos/123')  
                 .expect(400)
-                .end(done());
+                .end(done);
     });
 
 
@@ -49,8 +65,8 @@ describe('Delete/todos',()=>{
         var hex = new ObjectId().toHexString();
         request(app)
             .delete('/todos/'+hex)
-            .expect(400)
-            .end(done());
+            .expect(404)
+            .end(done);
     });
 });
 
@@ -93,10 +109,9 @@ describe('get/todos',()=>{
     it('Should fetch all data',(done)=>{
         request(app)
             .get('/todos')
-            .expect(200);
-            done();
-            
-    })
+            .expect(200)
+            .end(done);
+    });
 });
 
 describe('get/todos/id',()=>{
@@ -115,20 +130,55 @@ describe('get/todos/id',()=>{
                 done();
             })
     });
+
     it('shouldn´t get a result doc',(done)=>{
         var id = new ObjectId().toHexString();
 
         request(app)
-            .get('todos/'+id)
+            .get('/todos/'+id)
             .expect(404)
-            .end(done());
+            .end(done);
     });
-    it('should say is a invalid id',(done)=>{
+    it('should say is an invalid id',(done)=>{
         var id = '123';
         request(app)
-            .get('todos/'+id)
-            .expect(404)
-            .end(done());
+            .get('/todos/'+id)
+            .expect(400)
+            .end(done);
+            
     });
     
 });
+
+describe('PATCH /todos/id:',()=>{
+    it('should clear the completed and completed at',(done)=>{
+        let id = todos[1]._id.toHexString();
+        let newT = {completed:false};
+        request(app)
+            .patch('/todos/'+id)
+            .send(newT)
+            .expect(200)
+            .expect((res)=>{
+                expect(res.body.todo.completed).toBe(false);
+                expect(res.body.todo.completedAt).toBe(null);
+            })
+            .end(done);
+          
+    });
+
+    it('should change the text of a doc',(done)=>{
+        let id = todos[0]._id.toHexString();
+        let another = {text:'hola'};
+        request(app)
+            .patch('/todos/'+id)
+            .send(another)
+            .expect(200)
+            .expect((res)=>{
+                expect(res.body.todo.text).toBe(another.text);
+            })
+            .end(done);
+    
+    });
+
+});
+
