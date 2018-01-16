@@ -21,7 +21,7 @@ app.post('/todos',(req,res)=>{
     
     todo.save().then(
         (doc)=>{
-            res.send(doc);
+            res.send({doc});
         },
         (e)=>{
             res.status(400).send(e);
@@ -50,7 +50,7 @@ app.get('/todos/:id',(req,res)=>{
             if(!doc){
                 res.status(400).send('Error id not found');
             }else{
-                res.send(doc);
+                res.send({doc});
             }
         }
     ).catch((error)=>{res.status(404).send('Error in process')});
@@ -67,7 +67,7 @@ app.delete('/todos/:id',(req,res)=>{
             if(!ok){
                 return res.status(404).send('Error document not found');
             }
-            res.send(ok);
+            res.send({ok});
         }
     ).catch((error)=>res.status(400));
 
