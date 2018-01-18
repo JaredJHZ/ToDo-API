@@ -111,10 +111,25 @@ app.patch('/todos/:id',(req,res)=>{
     })
 });
 
+app.post('/users/',(req,res)=>{
+    let body = _.pick(req.body,['user','email','password']);
+    console.log(body);
+    user = new User(body);
+    user.save().then(()=>{
+        return user.generateAuthToken();    
+    }).then((token)=>{
+        res.header('x-auth', token).send(user);
+    }).catch((e)=>{
+        res.status(404).send({error:'parameters not valid'});
+    });
+});
+
+
 
 
 app.listen(port,()=>{
     console.log('Connected to port: '+port);
 });
+
 
 module.exports = {app};
