@@ -15,9 +15,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const {ObjectId} = require('mongodb');
 const _ = require('lodash');
+
 var mongoose = require('./db/db');
 var {Todo} = require('./models/ToDo');
 var {User} = require('./models/user');
+const authenticate = require('./middlewares/auth');
 
 const port = process.env.PORT;
 
@@ -113,18 +115,20 @@ app.patch('/todos/:id',(req,res)=>{
 
 app.post('/users/',(req,res)=>{
     let body = _.pick(req.body,['user','email','password']);
-    console.log(body);
     user = new User(body);
     user.save().then(()=>{
         return user.generateAuthToken();    
     }).then((token)=>{
         res.header('x-auth', token).send(user);
     }).catch((e)=>{
-        res.status(404).send({error:'parameters not valid'});
+        res.status(401).send({error:'parameters not valid'});
     });
 });
 
+app.get('/users/me',authenticate.authenticate,(req,res)=>{
+    res.send(req.user);
 
+});
 
 
 app.listen(port,()=>{
