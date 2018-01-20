@@ -208,6 +208,9 @@ describe('Post /users',()=>{
                     return done(err);
                 }
                 User.findOne({email:myU.email},(err,doc)=>{
+                    if(err){
+                        done(err);
+                    }
                     expect(doc.email).toBe(myU.email);
                     expect(doc.password).toNotBe(myU.password);
                     done();
@@ -226,7 +229,7 @@ describe('Post /users',()=>{
             .expect(401)
             .end(done)
     });
-    it('should not create user if email in use',(done)=>{
+    it('should not create user if email is in use',(done)=>{
         request(app)
             .post('/users/')
             .send(users[0])
@@ -234,3 +237,32 @@ describe('Post /users',()=>{
             .end(done);
     });
 });
+
+describe('Post /users/login',()=>{
+    it('Should login to the todo app',(done)=>{
+        request(app)
+            .post('/users/login')
+            .send({email:users[0].email, password:users[0].password})
+            .expect(200)
+            .expect((res)=>{
+                expect(res.body._id).toBe(users[0]._id.toHexString());
+                expect(res.body.email).toBe(users[0].email);
+                expect(res.headers['x-auth']).toExist();
+            })
+            .end((err,res)=>{
+                if(err){
+                    return done(err);
+                }
+                User.findById(users[0]._id).then(
+                    (user)=>{
+                        expect(user.tokens[1]).toInclude({
+                            access:'auth',
+                            token : res.headers['x-auth']
+                        });
+                        done();
+                    }
+                ).catch((e)=> done(e));
+            });
+    });
+   
+})
