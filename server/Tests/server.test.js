@@ -16,7 +16,8 @@ describe('Delete/todos',()=>{
 
     it('should not delete a doc cause it is an invalid id',(done)=>{
         request(app)
-            .delete('/todos/123')  
+            .delete('/todos/123')
+            .set('x-auth',users[0].tokens[0].token)  
                 .expect(400)
                 .end(done);
     });
@@ -24,9 +25,9 @@ describe('Delete/todos',()=>{
 
     it('Should remove a document',(done)=>{
         var hex = todos[0]._id.toHexString();
-        console.log(hex);
         request(app)
             .delete('/todos/'+hex)
+            .set('x-auth',users[0].tokens[0].token)
             .expect(200)
             .expect((res)=>{
                 expect(res.body.ok._id).toBe(hex);
@@ -46,6 +47,7 @@ describe('Delete/todos',()=>{
         var hex = new ObjectId().toHexString();
         request(app)
             .delete('/todos/'+hex)
+            .set('x-auth',users[0].tokens[0].token)
             .expect(404)
             .end(done);
     });
@@ -58,6 +60,7 @@ describe('Post/todos',()=>{
             .post('/todos')
                 .send(todos[0])
                 .expect(200)
+                .set('x-auth',users[0].tokens[0].token)
                 .expect((res)=>{
                     expect((res.body.doc.text)).toBe(todos[0].text);
                 })
@@ -76,6 +79,7 @@ describe('Post/todos',()=>{
         request(app)
             .post('/todos')
                 .send({text:''})
+                .set('x-auth',users[0].tokens[0].token)
                 .expect(400)
                 .end((error,res)=>{
                     if(error){
@@ -90,7 +94,11 @@ describe('get/todos',()=>{
     it('Should fetch all data',(done)=>{
         request(app)
             .get('/todos')
+            .set('x-auth',users[0].tokens[0].token)
             .expect(200)
+            .expect((res)=>{
+                expect(res.body.docs.length).toBe(1);
+            })
             .end(done);
     });
 });
@@ -100,6 +108,7 @@ describe('get/todos/id',()=>{
         var id = todos[0]._id.toHexString();
         request(app)
             .get('/todos/'+id)
+            .set('x-auth',users[0].tokens[0].token)
             .expect(200)
             .expect((res)=>{
                 expect(res.body.doc._id).toBe(id);
@@ -112,11 +121,22 @@ describe('get/todos/id',()=>{
             })
     });
 
+    it('should not get a todo of another user',(done)=>{
+        var id = todos[0]._id.toHexString();
+        request(app)
+            .get('/todos/'+id)
+            .set('x-auth',users[1].tokens[0].token)
+            .expect(404)
+            .end(done);
+    });
+
+
     it('shouldn´t get a result doc',(done)=>{
         var id = new ObjectId().toHexString();
 
         request(app)
             .get('/todos/'+id)
+            .set('x-auth',users[0].tokens[0].token)
             .expect(404)
             .end(done);
     });
@@ -124,6 +144,7 @@ describe('get/todos/id',()=>{
         var id = '123';
         request(app)
             .get('/todos/'+id)
+            .set('x-auth',users[0].tokens[0].token)
             .expect(400)
             .end(done);
             
@@ -137,6 +158,7 @@ describe('PATCH /todos/id:',()=>{
         let newT = {completed:false};
         request(app)
             .patch('/todos/'+id)
+            .set('x-auth',users[1].tokens[0].token)
             .send(newT)
             .expect(200)
             .expect((res)=>{
@@ -152,6 +174,7 @@ describe('PATCH /todos/id:',()=>{
         let another = {text:'hola'};
         request(app)
             .patch('/todos/'+id)
+            .set('x-auth',users[0].tokens[0].token)
             .send(another)
             .expect(200)
             .expect((res)=>{
@@ -159,6 +182,19 @@ describe('PATCH /todos/id:',()=>{
             })
             .end(done);
     
+    });
+
+    it('should not change the text because is an invalid token',(done)=>{
+        let id = todos[0]._id.toHexString();
+        let update = {text:"hello darkness"};
+        request(app)
+            .patch('/todos/'+id)
+            .set('x-auth',users[1].tokens[0].token)
+            .expect(400)
+            .end((err,res)=>{
+                expect(res.body.todo).toBe(undefined);
+                done();
+            });
     });
 
 });
@@ -262,7 +298,7 @@ describe('Post /users/login',()=>{
                         done();
                     }
                 ).catch((e)=> done(e));
-            });
+            }); 
     });
    
 })

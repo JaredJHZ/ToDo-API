@@ -8,12 +8,14 @@ var todos = [
     {
     _id: new ObjectId,
     text:'First text to do',
+    _creator: userOneId,
     completed:false,
     completedAt:null
     },
     {
         _id: new ObjectId(),
         text: 'Second to do',
+        _creator: userTwoId,
         completed:true,
         completedAt: 555
     }
@@ -28,14 +30,18 @@ var users = [
         password: 'jared123',
         tokens: [{
             access: 'auth',
-            token: jwt.sign({_id:userOneId,access:'auth'},'abc123').toString()
+            token: jwt.sign({_id:userOneId,access:'auth'},process.env.JWT_KEY).toString()
         }]
     },
     {
         _id: userTwoId,
         user:'bad',
         email:'hola@example.com',
-        password:'asd123'
+        password:'asd123',
+        tokens: [{
+            access: 'auth',
+            token: jwt.sign({_id:userTwoId,access:'auth'},process.env.JWT_KEY).toString()
+        }]
 
     }
 ];

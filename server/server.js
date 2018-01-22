@@ -1,16 +1,4 @@
-var env = process.env.NODE_ENV ||  'development';;
-
-if(env==='development')
-{
-    process.env.PORT = 5000;
-    process.env.MONGODB_URI= "mongodb://localhost:27017/TodoApp";
-}else if(env === 'test'){
-    process.env.PORT =5000;
-    process.env.MONGODB_URI= "mongodb://localhost:27017/TodoAppTest";
-}
-
-console.log(env);   
-
+require('./config');
 const express = require('express');
 const bodyParser = require('body-parser');
 const {ObjectId} = require('mongodb');
@@ -30,9 +18,10 @@ var app = express();
 
 app.use(bodyParser.json());
 
-app.post('/todos',(req,res)=>{
+app.post('/todos',authenticate.authenticate,(req,res)=>{
     var todo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        _creator: req.user._id
     });
     
     todo.save().then(
@@ -46,8 +35,10 @@ app.post('/todos',(req,res)=>{
     
 });
 
-app.get('/todos',(req,res)=>{
-    Todo.find({}).then(
+app.get('/todos',authenticate.authenticate,(req,res)=>{
+    Todo.find({
+        _creator:req.user._id
+    }).then(
         (docs)=>{
            res.status(200).send({docs});
         }
@@ -56,12 +47,15 @@ app.get('/todos',(req,res)=>{
     });
 });
 
-app.get('/todos/:id',(req,res)=>{
+app.get('/todos/:id',authenticate.authenticate,(req,res)=>{
     let id = req.params.id;
     if(!ObjectId.isValid(id)){
        return res.status(400).send('Id not valid');
     }
-    Todo.findById(id).then(
+    Todo.findOne({
+        _id:id,
+        _creator:req.user.id
+    }).then(
         (doc)=>{
             if(!doc){
                 res.status(404).send('Error id not found');
@@ -73,12 +67,15 @@ app.get('/todos/:id',(req,res)=>{
 
 });
 
-app.delete('/todos/:id',(req,res)=>{
+app.delete('/todos/:id',authenticate.authenticate,(req,res)=>{
     let id = req.params.id;
     if(!ObjectId.isValid(id)){
         return res.status(400).send('Error Id invalid');
     }
-    Todo.findByIdAndRemove(id).then(
+    Todo.findOneAndRemove({
+        _id:id,
+        _creator:req.user._id
+    }).then(
         (ok)=>{
             if(!ok){
                 return res.status(404).send('Error document not found');
@@ -89,7 +86,7 @@ app.delete('/todos/:id',(req,res)=>{
 
 });
 
-app.patch('/todos/:id',(req,res)=>{
+app.patch('/todos/:id',authenticate.authenticate,(req,res)=>{
     let id = req.params.id;
     let body = _.pick(req.body, ['text','completed']);
     if(!ObjectId.isValid(id)){
@@ -101,8 +98,11 @@ app.patch('/todos/:id',(req,res)=>{
         body.completed = false;
         body.completedAt = null;
     }
-
-    Todo.findByIdAndUpdate(id,{$set:body},{new: true}).then(
+    let query= {
+        _id:id,
+        _creator:req.user._id
+    }
+    Todo.findOneAndUpdate(query,{$set:body},{new: true}).then(
         (todo)=>{
             if(!todo){
                 res.status(400).send();
